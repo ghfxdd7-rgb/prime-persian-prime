@@ -13,6 +13,11 @@ import Login from "./pages/Login";
 import Signup from "./pages/Signup";
 import Dashboard from "./pages/Dashboard";
 import NotFound from "./pages/NotFound";
+import ServiceMassage from "./pages/ServiceMassage";
+import ServiceNutrition from "./pages/ServiceNutrition";
+import ServiceTraining from "./pages/ServiceTraining";
+import ServiceCoach from "./pages/ServiceCoach";
+import ServiceFitness from "./pages/ServiceFitness";
 
 const queryClient = new QueryClient();
 
@@ -29,6 +34,11 @@ const App = () => (
               <Route path="/" element={<Home />} />
               <Route path="/about" element={<About />} />
               <Route path="/services" element={<Services />} />
+              <Route path="/services/massage" element={<ServiceMassage />} />
+              <Route path="/services/nutrition" element={<ServiceNutrition />} />
+              <Route path="/services/training" element={<ServiceTraining />} />
+              <Route path="/services/coach" element={<ServiceCoach />} />
+              <Route path="/services/fitness" element={<ServiceFitness />} />
               <Route path="/contact" element={<Contact />} />
               <Route path="/login" element={<Login />} />
               <Route path="/signup" element={<Signup />} />
