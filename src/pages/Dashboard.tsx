@@ -1,7 +1,39 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from '@/hooks/use-toast';
 
 const Dashboard = () => {
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<'reservations' | 'orders' | 'consultants'>('reservations');
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const checkAuth = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session) {
+        toast({
+          title: 'دسترسی محدود',
+          description: 'برای دسترسی به حساب کاربری ابتدا باید ثبت نام کنید یا وارد شوید',
+          variant: 'destructive',
+        });
+        navigate('/login');
+      } else {
+        setIsLoading(false);
+      }
+    };
+
+    checkAuth();
+  }, [navigate]);
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-xl text-foreground/70">در حال بارگذاری...</div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen pt-24 pb-20">

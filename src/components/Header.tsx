@@ -1,10 +1,29 @@
-import { Link, useLocation } from 'react-router-dom';
-import { Menu, X } from 'lucide-react';
-import { useState } from 'react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { Menu, X, User, LogOut } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from '@/hooks/use-toast';
+import type { User as SupabaseUser } from '@supabase/supabase-js';
 
 const Header = () => {
   const location = useLocation();
+  const navigate = useNavigate();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [user, setUser] = useState<SupabaseUser | null>(null);
+
+  useEffect(() => {
+    // Get initial session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setUser(session?.user ?? null);
+    });
+
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
   
   const links = [
     { path: '/', label: 'خانه' },
@@ -12,6 +31,30 @@ const Header = () => {
     { path: '/services', label: 'خدمات ما' },
     { path: '/contact', label: 'تماس با ما' },
   ];
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    toast({
+      title: 'خروج موفق',
+      description: 'شما با موفقیت از حساب کاربری خود خارج شدید',
+    });
+    navigate('/');
+    setMobileMenuOpen(false);
+  };
+
+  const handleDashboardClick = () => {
+    if (!user) {
+      toast({
+        title: 'دسترسی محدود',
+        description: 'برای دسترسی به حساب کاربری ابتدا باید ثبت نام کنید یا وارد شوید',
+        variant: 'destructive',
+      });
+      navigate('/login');
+    } else {
+      navigate('/dashboard');
+    }
+    setMobileMenuOpen(false);
+  };
 
   return (
     <header className="fixed top-0 right-0 left-0 z-50 glass border-b border-white/10">
@@ -41,18 +84,39 @@ const Header = () => {
 
           {/* Auth Buttons */}
           <div className="hidden md:flex items-center gap-4">
-            <Link
-              to="/login"
-              className="px-6 py-2 text-foreground hover:text-primary transition-colors"
-            >
-              ورود
-            </Link>
-            <Link
-              to="/signup"
-              className="px-6 py-2 bg-primary text-primary-foreground rounded-full hover:shadow-lg hover:shadow-primary/50 transition-all duration-300 font-medium"
-            >
-              ثبت نام
-            </Link>
+            {user ? (
+              <>
+                <button
+                  onClick={handleDashboardClick}
+                  className="px-6 py-2 text-foreground hover:text-primary transition-colors flex items-center gap-2"
+                >
+                  <User size={20} />
+                  پنل کاربری
+                </button>
+                <button
+                  onClick={handleLogout}
+                  className="px-6 py-2 bg-primary text-primary-foreground rounded-full hover:shadow-lg hover:shadow-primary/50 transition-all duration-300 font-medium flex items-center gap-2"
+                >
+                  <LogOut size={20} />
+                  خروج
+                </button>
+              </>
+            ) : (
+              <>
+                <Link
+                  to="/login"
+                  className="px-6 py-2 text-foreground hover:text-primary transition-colors"
+                >
+                  ورود
+                </Link>
+                <Link
+                  to="/signup"
+                  className="px-6 py-2 bg-primary text-primary-foreground rounded-full hover:shadow-lg hover:shadow-primary/50 transition-all duration-300 font-medium"
+                >
+                  ثبت نام
+                </Link>
+              </>
+            )}
           </div>
 
           {/* Mobile Menu Button */}
@@ -82,20 +146,41 @@ const Header = () => {
               </Link>
             ))}
             <div className="flex flex-col gap-3 pt-4 border-t border-white/10">
-              <Link
-                to="/login"
-                onClick={() => setMobileMenuOpen(false)}
-                className="text-center py-2 text-foreground"
-              >
-                ورود
-              </Link>
-              <Link
-                to="/signup"
-                onClick={() => setMobileMenuOpen(false)}
-                className="text-center py-2 bg-primary text-primary-foreground rounded-full"
-              >
-                ثبت نام
-              </Link>
+              {user ? (
+                <>
+                  <button
+                    onClick={handleDashboardClick}
+                    className="text-center py-2 text-foreground flex items-center justify-center gap-2"
+                  >
+                    <User size={20} />
+                    پنل کاربری
+                  </button>
+                  <button
+                    onClick={handleLogout}
+                    className="text-center py-2 bg-primary text-primary-foreground rounded-full flex items-center justify-center gap-2"
+                  >
+                    <LogOut size={20} />
+                    خروج
+                  </button>
+                </>
+              ) : (
+                <>
+                  <Link
+                    to="/login"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="text-center py-2 text-foreground"
+                  >
+                    ورود
+                  </Link>
+                  <Link
+                    to="/signup"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="text-center py-2 bg-primary text-primary-foreground rounded-full"
+                  >
+                    ثبت نام
+                  </Link>
+                </>
+              )}
             </div>
           </div>
         )}
