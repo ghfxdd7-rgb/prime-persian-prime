@@ -2,6 +2,8 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from '@/hooks/use-toast';
 
 const Login = () => {
   const navigate = useNavigate();
@@ -9,13 +11,51 @@ const Login = () => {
     email: '',
     password: '',
   });
+  const [isLoading, setIsLoading] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Handle login logic here
-    console.log('Login:', formData);
-    // Navigate to home after successful login
-    navigate('/');
+    setIsLoading(true);
+
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: formData.email,
+        password: formData.password,
+      });
+
+      if (error) {
+        if (error.message.includes('Invalid login credentials')) {
+          toast({
+            title: 'خطا در ورود',
+            description: 'حساب کاربری یافت نشد. لطفاً ابتدا ثبت نام کنید.',
+            variant: 'destructive',
+          });
+        } else {
+          toast({
+            title: 'خطا در ورود',
+            description: error.message,
+            variant: 'destructive',
+          });
+        }
+        return;
+      }
+
+      if (data.user) {
+        toast({
+          title: 'ورود موفق',
+          description: 'به باشگاه پرایم خوش آمدید',
+        });
+        navigate('/');
+      }
+    } catch (error) {
+      toast({
+        title: 'خطا',
+        description: 'مشکلی پیش آمده است. لطفاً دوباره تلاش کنید.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -62,9 +102,10 @@ const Login = () => {
 
             <Button
               type="submit"
-              className="w-full bg-primary text-primary-foreground hover:scale-105 transition-all duration-300 text-lg py-6 font-bold"
+              disabled={isLoading}
+              className="w-full bg-primary text-primary-foreground hover:scale-105 transition-all duration-300 text-lg py-6 font-bold disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              ورود
+              {isLoading ? 'در حال ورود...' : 'ورود'}
             </Button>
           </form>
 

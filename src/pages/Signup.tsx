@@ -2,6 +2,8 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from '@/hooks/use-toast';
 
 const Signup = () => {
   const navigate = useNavigate();
@@ -12,19 +14,77 @@ const Signup = () => {
     password: '',
     confirmPassword: '',
   });
+  const [isLoading, setIsLoading] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (formData.password !== formData.confirmPassword) {
-      alert('رمز عبور و تکرار آن یکسان نیستند');
+      toast({
+        title: 'خطا',
+        description: 'رمز عبور و تکرار آن یکسان نیستند',
+        variant: 'destructive',
+      });
       return;
     }
 
-    // Handle signup logic here
-    console.log('Signup:', formData);
-    // Navigate to login after successful signup
-    navigate('/login');
+    if (formData.password.length < 8) {
+      toast({
+        title: 'خطا',
+        description: 'رمز عبور باید حداقل ۸ کاراکتر باشد',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    setIsLoading(true);
+
+    try {
+      const { data, error } = await supabase.auth.signUp({
+        email: formData.email,
+        password: formData.password,
+        options: {
+          data: {
+            first_name: formData.firstName,
+            last_name: formData.lastName,
+          },
+          emailRedirectTo: `${window.location.origin}/`,
+        },
+      });
+
+      if (error) {
+        if (error.message.includes('already registered')) {
+          toast({
+            title: 'خطا',
+            description: 'این ایمیل قبلاً ثبت شده است. لطفاً وارد شوید.',
+            variant: 'destructive',
+          });
+        } else {
+          toast({
+            title: 'خطا در ثبت نام',
+            description: error.message,
+            variant: 'destructive',
+          });
+        }
+        return;
+      }
+
+      if (data.user) {
+        toast({
+          title: 'ثبت نام موفق',
+          description: 'اکنون می‌توانید وارد شوید',
+        });
+        navigate('/login');
+      }
+    } catch (error) {
+      toast({
+        title: 'خطا',
+        description: 'مشکلی پیش آمده است. لطفاً دوباره تلاش کنید.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -103,9 +163,10 @@ const Signup = () => {
 
             <Button
               type="submit"
-              className="w-full bg-primary text-primary-foreground hover:scale-105 transition-all duration-300 text-lg py-6 font-bold"
+              disabled={isLoading}
+              className="w-full bg-primary text-primary-foreground hover:scale-105 transition-all duration-300 text-lg py-6 font-bold disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              ثبت نام
+              {isLoading ? 'در حال ثبت نام...' : 'ثبت نام'}
             </Button>
           </form>
 
