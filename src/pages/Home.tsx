@@ -6,6 +6,7 @@ import nutritionImage from '@/assets/service-nutrition.jpg';
 import trainingImage from '@/assets/service-training.jpg';
 import coachImage from '@/assets/service-coach.jpg';
 import fitnessImage from '@/assets/service-fitness.jpg';
+import FloatingChatButton from '@/components/FloatingChatButton';
 
 const services = [
   {
@@ -43,6 +44,7 @@ const services = [
 const Home = () => {
   return (
     <div className="min-h-screen">
+      <FloatingChatButton />
       {/* Hero Section */}
       <section className="relative h-screen flex items-center justify-center overflow-hidden">
         {/* Background Image */}
